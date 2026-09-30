@@ -237,13 +237,15 @@ fun PremiumUnlockDialog(
                             }
 
                             Button(
-                                onClick = { onPayClick?.invoke() },
-                                modifier = Modifier.fillMaxWidth().height(56.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37), contentColor = Color.White),
-                                shape = RoundedCornerShape(20.dp),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 1.dp)
+                                onClick = {
+                                    viewModel.startPremiumPurchase(amountPaise = 39900)
+                                },
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37), contentColor = Color.Black),
+                                shape = RoundedCornerShape(18.dp),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp, pressedElevation = 1.dp)
                             ) {
-                                Text("Chat With Advisor", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                                Text("Pay ₹399 & Unlock Instantly", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color.Black))
                             }
 
                             OutlinedButton(

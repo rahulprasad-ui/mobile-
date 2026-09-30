@@ -56,6 +56,15 @@ private val AccentPurple = Color(0xFF8B5CF6)
 private val AccentAmber = Color(0xFFF59E0B)
 private val AccentIndigo = Color(0xFF6366F1)
 private val InputBg = Color(0xFF0F172A)
+ 
+data class ToolCardItem(
+    val type: CalculatorType,
+    val title: String,
+    val subtitle: String,
+    val tag: String,
+    val color: Color,
+    val icon: String
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,8 +77,8 @@ fun CalculatorsScreen(
     val filteredHistory by viewModel.filteredHistory.collectAsState()
     val historyFilter by viewModel.historyFilter.collectAsState()
 
+    var activeCalculator by remember { mutableStateOf<CalculatorType?>(null) }
     var showHistorySheet by remember { mutableStateOf(false) }
-    var selectedCategory by remember { mutableStateOf("ALL") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -78,122 +87,349 @@ fun CalculatorsScreen(
         modifier = Modifier.systemBarsPadding(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Financial Tools & Calculators",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
-                        Text(
-                            text = "Smart financial utilities & instant calculations",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF94A3B8)
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
+            // Sleek minimalist top header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (activeCalculator != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { activeCalculator = null }
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "All Tools",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color(0xFF38BDF8)
                         )
                     }
-                },
-                actions = {
-                    IconButton(onClick = { showHistorySheet = true }) {
-                        BadgedBox(
-                            badge = {
-                                if (allHistory.isNotEmpty()) {
-                                    Badge(
-                                        containerColor = AccentBlue,
-                                        contentColor = Color.Black
-                                    ) {
-                                        Text(
-                                            text = "${allHistory.size}",
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onBack() }
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "Back",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
+                        )
+                    }
+                }
+
+                IconButton(onClick = { showHistorySheet = true }) {
+                    BadgedBox(
+                        badge = {
+                            if (allHistory.isNotEmpty()) {
+                                Badge(
+                                    containerColor = AccentBlue,
+                                    contentColor = Color.Black
+                                ) {
+                                    Text(
+                                        text = "${allHistory.size}",
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
+                        }
+                    ) {
+                        Icon(
+                            Icons.Outlined.History,
+                            contentDescription = "Calculation History",
+                            tint = AccentBlue
+                        )
+                    }
+                }
+            }
+        }
+    ) { paddingValues ->
+        if (activeCalculator == null) {
+            // -------------------------------------------------------------
+            // OPTION SELECT HUB (Grid / List of Cards)
+            // -------------------------------------------------------------
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Financial Tools & Calculators",
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Choose a tool below to calculate with custom values instantly.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF94A3B8)
+                    )
+                }
+
+                Spacer(Modifier.height(4.dp))
+
+                // Primary Featured Calculation Tools Cards
+                val tools = listOf(
+                    ToolCardItem(
+                        type = CalculatorType.EQUIVALENCE,
+                        title = "R&E Calculator",
+                        subtitle = "Ratio, Equivalence & Scaling Proportionality",
+                        tag = "RATIO & EQUIV",
+                        color = AccentPurple,
+                        icon = "⚖️"
+                    ),
+                    ToolCardItem(
+                        type = CalculatorType.MDR,
+                        title = "MDR Calculator",
+                        subtitle = "0.4% rate, ₹2,000 threshold waiver & ₹300 cap",
+                        tag = "PAYMENTS",
+                        color = AccentGreen,
+                        icon = "💳"
+                    ),
+                    ToolCardItem(
+                        type = CalculatorType.EMI,
+                        title = "Loan EMI Calculator",
+                        subtitle = "Monthly installment, total interest & loan payout",
+                        tag = "BORROWING",
+                        color = AccentBlue,
+                        icon = "🏠"
+                    ),
+                    ToolCardItem(
+                        type = CalculatorType.PROFIT_LOSS,
+                        title = "Profit & Loss Calculator",
+                        subtitle = "Gain/Loss %, cost breakdown & final amount",
+                        tag = "BUSINESS",
+                        color = AccentAmber,
+                        icon = "💹"
+                    ),
+                    ToolCardItem(
+                        type = CalculatorType.COMPOUND_INTEREST,
+                        title = "Compound Interest (CI)",
+                        subtitle = "Exponential growth with compounding periods",
+                        tag = "INVESTMENT",
+                        color = AccentIndigo,
+                        icon = "⏳"
+                    ),
+                    ToolCardItem(
+                        type = CalculatorType.PERCENTAGE,
+                        title = "Percentage Calculator",
+                        subtitle = "Direct %, value additions & subtractions",
+                        tag = "UTILITY",
+                        color = AccentBlue,
+                        icon = "🔢"
+                    ),
+                    ToolCardItem(
+                        type = CalculatorType.SIP,
+                        title = "SIP & Wealth Builder",
+                        subtitle = "Monthly SIP projection & long-term wealth",
+                        tag = "GROWTH",
+                        color = AccentGreen,
+                        icon = "📈"
+                    ),
+                    ToolCardItem(
+                        type = CalculatorType.GST,
+                        title = "GST Calculator",
+                        subtitle = "Inclusive & Exclusive tax calculations",
+                        tag = "TAX",
+                        color = AccentAmber,
+                        icon = "📑"
+                    ),
+                    ToolCardItem(
+                        type = CalculatorType.FD,
+                        title = "Fixed Deposit (FD / RD)",
+                        subtitle = "Quarterly compounded deposit maturity",
+                        tag = "SAVINGS",
+                        color = AccentPurple,
+                        icon = "🏦"
+                    ),
+                    ToolCardItem(
+                        type = CalculatorType.INFLATION,
+                        title = "Inflation Impact",
+                        subtitle = "Future cost & purchasing power erosion",
+                        tag = "PLANNING",
+                        color = AccentRed,
+                        icon = "📊"
+                    )
+                )
+
+                tools.forEach { item ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable {
+                                viewModel.setCalculatorType(item.type)
+                                activeCalculator = item.type
+                            }
+                            .border(1.dp, item.color.copy(alpha = 0.35f), RoundedCornerShape(20.dp)),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardBg),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(item.color.copy(alpha = 0.15f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(item.icon, fontSize = 22.sp)
+                                }
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            text = item.title,
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = Color.White
+                                        )
+                                        Surface(
+                                            color = item.color.copy(alpha = 0.2f),
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text(
+                                                text = item.tag,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
+                                                color = item.color
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        text = item.subtitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF94A3B8)
+                                    )
+                                }
+                            }
+
                             Icon(
-                                Icons.Outlined.History,
-                                contentDescription = "Calculation History",
-                                tint = AccentBlue
+                                Icons.Default.ChevronRight,
+                                contentDescription = "Open",
+                                tint = item.color,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = AmoledBlack)
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            // Category Filter Pills
-            CategoryFilterBar(
-                selectedCategory = selectedCategory,
-                onCategorySelected = { selectedCategory = it }
-            )
+                }
 
-            // Calculator Type Switcher Tabs
-            CalculatorTypeSelector(
-                selectedType = currentType,
-                selectedCategory = selectedCategory,
-                onTypeSelected = { viewModel.setCalculatorType(it) }
-            )
+                // Recent History preview card if available
+                if (allHistory.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    RecentHistoryPreviewCard(
+                        recentItems = allHistory.take(2),
+                        onOpenHistory = { showHistorySheet = true },
+                        onReopen = {
+                            viewModel.reopenCalculation(it)
+                            activeCalculator = CalculatorType.valueOf(it.calculatorType)
+                        }
+                    )
+                }
 
-            // Dynamic Calculator Content
-            when (currentType) {
-                CalculatorType.PERCENTAGE -> PercentageCalculatorSection(viewModel)
-                CalculatorType.EQUIVALENCE -> EquivalenceCalculatorSection(viewModel)
-                CalculatorType.PROFIT_LOSS -> ProfitLossCalculatorSection(viewModel)
-                CalculatorType.COMPOUND_INTEREST -> CompoundInterestCalculatorSection(viewModel)
-                CalculatorType.MDR -> MdrCalculatorSection(viewModel)
-                CalculatorType.EMI -> EmiCalculatorSection(viewModel)
-                CalculatorType.SIP -> SipCalculatorSection(viewModel)
-                CalculatorType.LUMPSUM -> LumpsumCalculatorSection(viewModel)
-                CalculatorType.FD -> FdCalculatorSection(viewModel)
-                CalculatorType.RD -> RdCalculatorSection(viewModel)
-                CalculatorType.GST -> GstCalculatorSection(viewModel)
-                CalculatorType.INFLATION -> InflationCalculatorSection(viewModel)
+                Spacer(Modifier.height(100.dp))
             }
-
-            // Save to History CTA Button
-            Button(
-                onClick = {
-                    viewModel.saveCurrentCalculation()
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Calculation saved to history! 📜")
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                shape = RoundedCornerShape(16.dp),
+        } else {
+            // -------------------------------------------------------------
+            // ACTIVE CALCULATOR VIEW (Interactive screen with custom inputs)
+            // -------------------------------------------------------------
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                Icon(Icons.Outlined.BookmarkAdd, contentDescription = null, tint = Color.White)
-                Spacer(Modifier.width(8.dp))
-                Text("Save to Calculation History", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            }
+                // Header badge
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = currentType.displayName,
+                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Enter your custom values below for real-time results.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF94A3B8)
+                        )
+                    }
+                }
 
-            // Quick Recent History Preview Banner
-            if (allHistory.isNotEmpty()) {
-                RecentHistoryPreviewCard(
-                    recentItems = allHistory.take(2),
-                    onOpenHistory = { showHistorySheet = true },
-                    onReopen = { viewModel.reopenCalculation(it) }
-                )
+                // Dynamic Calculator Content
+                when (currentType) {
+                    CalculatorType.PERCENTAGE -> PercentageCalculatorSection(viewModel)
+                    CalculatorType.EQUIVALENCE -> EquivalenceCalculatorSection(viewModel)
+                    CalculatorType.PROFIT_LOSS -> ProfitLossCalculatorSection(viewModel)
+                    CalculatorType.COMPOUND_INTEREST -> CompoundInterestCalculatorSection(viewModel)
+                    CalculatorType.MDR -> MdrCalculatorSection(viewModel)
+                    CalculatorType.EMI -> EmiCalculatorSection(viewModel)
+                    CalculatorType.SIP -> SipCalculatorSection(viewModel)
+                    CalculatorType.LUMPSUM -> LumpsumCalculatorSection(viewModel)
+                    CalculatorType.FD -> FdCalculatorSection(viewModel)
+                    CalculatorType.RD -> RdCalculatorSection(viewModel)
+                    CalculatorType.GST -> GstCalculatorSection(viewModel)
+                    CalculatorType.INFLATION -> InflationCalculatorSection(viewModel)
+                }
+
+                // Save to History CTA Button
+                Button(
+                    onClick = {
+                        viewModel.saveCurrentCalculation()
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Calculation saved to history! 📜")
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                ) {
+                    Icon(Icons.Outlined.BookmarkAdd, contentDescription = null, tint = Color.White)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Save to Calculation History", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+
+                Spacer(Modifier.height(80.dp))
             }
         }
     }

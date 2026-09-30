@@ -421,17 +421,24 @@ fun HomeScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        "₹3300/month",
-                                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = Color.White
-                                    )
+                                    Column {
+                                        Text(
+                                            "₹399",
+                                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                                            color = Color(0xFFD4AF37)
+                                        )
+                                        Text(
+                                            "+ Free Live Session",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = Color(0xFF00E471)
+                                        )
+                                    }
                                     Button(
                                         onClick = {
                                             if (!isFull) {
                                                 val intent = Intent(context, com.rivavafi.universal.ui.elite.EliteLandingActivity::class.java)
-                                val options = android.app.ActivityOptions.makeCustomAnimation(context, android.R.anim.fade_in, android.R.anim.fade_out)
-                                context.startActivity(intent, options.toBundle())
+                                                val options = android.app.ActivityOptions.makeCustomAnimation(context, android.R.anim.fade_in, android.R.anim.fade_out)
+                                                context.startActivity(intent, options.toBundle())
                                             }
                                         },
                                         enabled = !isFull,
@@ -442,7 +449,7 @@ fun HomeScreen(
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
                                         Text(
-                                            if (isFull) "Membership Full" else "Apply for Access",
+                                            if (isFull) "Membership Full" else "Unlock for ₹399",
                                             color = if (isFull) Color.LightGray else Color.Black,
                                             fontWeight = FontWeight.Bold
                                         )

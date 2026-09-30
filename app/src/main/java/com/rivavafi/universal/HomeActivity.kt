@@ -97,7 +97,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object HelpCenter : Screen("help_center", "Help Center", Icons.Outlined.Info)
     object StockDetail : Screen("stock_detail", "Stock Detail", Icons.Outlined.AccountBalanceWallet)
     object TransactionDetail : Screen("transaction_detail", "Transaction Detail", Icons.AutoMirrored.Outlined.ListAlt)
-    object Calculators : Screen("calculators", "Calculators", Icons.Outlined.Calculate)
+    object Calculators : Screen("calculators", "Tools", Icons.Outlined.Calculate)
     object VerifyEmail : Screen("verify_email", "Verify Email", Icons.Outlined.Home)
     object ResetPassword : Screen("reset_password", "Reset Password", Icons.Outlined.Home)
 }
@@ -105,7 +105,8 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 val BaseBottomNavigationItems = listOf(
     Screen.Home,
     Screen.Transactions,
-    Screen.Analytics,
+    Screen.Calculators,
+    Screen.RivavaPortfolio,
     Screen.Profile
 )
 
@@ -208,8 +209,7 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
         }
     }
 
-    // Always include RivavaPortfolio, even if not premium, so we can show the lock icon and trigger the unlock flow
-    val bottomNavigationItems = listOf(Screen.Home, Screen.Transactions, Screen.RivavaPortfolio, Screen.Analytics, Screen.Profile)
+    val bottomNavigationItems = listOf(Screen.Home, Screen.Transactions, Screen.Calculators, Screen.RivavaPortfolio, Screen.Analytics, Screen.Profile)
 
     val isBottomBarVisible = currentRoute in bottomNavigationItems.map { it.route }
 

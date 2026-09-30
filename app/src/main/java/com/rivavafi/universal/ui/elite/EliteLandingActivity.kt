@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.launch
 import android.widget.Toast
 import android.content.Intent
 import android.net.Uri
@@ -241,6 +242,47 @@ fun EliteLandingScreen(
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(20.dp))
         }
 
+        var isProcessingPayment by remember { mutableStateOf(false) }
+        var showPaymentSuccessDialog by remember { mutableStateOf(false) }
+        val coroutineScope = rememberCoroutineScope()
+        val eliteRepository = remember { com.rivavafi.universal.data.repository.EliteRepository() }
+
+        if (showPaymentSuccessDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showPaymentSuccessDialog = false
+                    context.startActivity(Intent(context, EliteDashboardActivity::class.java))
+                    (context as? android.app.Activity)?.finish()
+                },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF00E471))
+                        Spacer(Modifier.width(8.dp))
+                        Text("🎉 Elite Unlocked!", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                text = {
+                    Text(
+                        "Your payment of ₹399 was successful!\n\nYou now have full Rivava Elite access with 600 monthly minutes and your 1-on-1 private advisory session is ready to book.",
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                },
+                containerColor = Color(0xFF161616),
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showPaymentSuccessDialog = false
+                            context.startActivity(Intent(context, EliteDashboardActivity::class.java))
+                            (context as? android.app.Activity)?.finish()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37))
+                    ) {
+                        Text("Go to Elite Dashboard", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                }
+            )
+        }
+
         // Bottom CTA Overlay
         Box(
             modifier = Modifier
@@ -250,40 +292,85 @@ fun EliteLandingScreen(
                     Brush.verticalGradient(
                         colors = listOf(
                             Color.Transparent,
-                            Color.Black.copy(alpha = 0.85f),
+                            Color.Black.copy(alpha = 0.9f),
                             Color(0xFF050505)
                         )
                     )
                 )
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 14.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            Button(
-                onClick = {
-                    com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
-                        context = context,
-                        username = finalUserName,
-                        email = finalUserEmail,
-                        phoneNumber = phoneNumber,
-                        preference = "Rivava Elite",
-                        premiumStatus = userPremiumStatus
-                    )
-                    isConnecting = false
-                },
-                enabled = !isConnecting && !isFull,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFD4AF37),
-                    disabledContainerColor = Color.DarkGray
-                ),
-                shape = RoundedCornerShape(16.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (isFull) {
-                    Text("Membership Full", color = Color.LightGray, fontWeight = FontWeight.Bold)
-                } else {
-                    Text("Chat With Advisor", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Button(
+                    onClick = {
+                        isProcessingPayment = true
+                        coroutineScope.launch {
+                            try {
+                                val res = eliteRepository.createEliteOrder()
+                                if (res.success && res.orderId != null) {
+                                    val verify = eliteRepository.verifyElitePayment(res.orderId)
+                                    isProcessingPayment = false
+                                    if (verify) {
+                                        showPaymentSuccessDialog = true
+                                    } else {
+                                        Toast.makeText(context, "Payment verification pending. Please check connection.", Toast.LENGTH_LONG).show()
+                                    }
+                                } else {
+                                    isProcessingPayment = false
+                                    Toast.makeText(context, res.error ?: "Failed to initiate payment", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                isProcessingPayment = false
+                                Toast.makeText(context, "Payment error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    enabled = !isProcessingPayment && !isFull,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFD4AF37),
+                        disabledContainerColor = Color.DarkGray
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    if (isProcessingPayment) {
+                        CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(10.dp))
+                        Text("Processing ₹399 Payment...", color = Color.Black, fontWeight = FontWeight.Bold)
+                    } else if (isFull) {
+                        Text("Membership Full", color = Color.LightGray, fontWeight = FontWeight.Bold)
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Pay ₹399 & Unlock Elite", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                            Spacer(Modifier.width(6.dp))
+                            Text("(+ Free Session)", color = Color(0xFF1E293B), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
+                            context = context,
+                            username = finalUserName,
+                            email = finalUserEmail,
+                            phoneNumber = phoneNumber,
+                            preference = "Rivava Elite (399 Offer)",
+                            premiumStatus = userPremiumStatus
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, Color(0xFFD4AF37).copy(alpha = 0.5f))
+                ) {
+                    Text("Chat With Advisor on WhatsApp", color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
         }
@@ -295,7 +382,6 @@ fun EliteLandingScreen(
                     .background(Color.Black.copy(alpha = 0.7f)),
                 contentAlignment = Alignment.Center
             ) {
-                // Blur Background with Shimmer overlay
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = Color(0xFFD4AF37))
                     Spacer(modifier = Modifier.height(16.dp))
@@ -524,19 +610,24 @@ fun SectionPricing() {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "₹3300 / month",
+                    "₹399 Special Access",
                     style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold),
                     color = Color(0xFFD4AF37)
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    "+ Free 1-on-1 Wealth Consultation Session",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFF00E471)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
 
                 val features = listOf(
-                    "600 Monthly Minutes",
+                    "Free 1-on-1 Fund Manager Session",
+                    "600 Monthly Advisory Minutes",
                     "Private Video Consultations",
-                    "Priority Support",
-                    "Exclusive Insights",
-                    "Elite Community Access",
-                    "Auto-renew Enabled"
+                    "Priority 24/7 Support",
+                    "Exclusive Portfolio Insights & Strategies",
+                    "Elite Community Access"
                 )
 
                 features.forEach { feature ->

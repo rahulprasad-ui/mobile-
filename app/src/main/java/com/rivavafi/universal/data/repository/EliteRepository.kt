@@ -135,42 +135,71 @@ class EliteRepository @Inject constructor() {
     }
 
     suspend fun createEliteOrder(): OrderResult {
-        if (auth.currentUser?.uid == null) return OrderResult(false, error = "User not authenticated")
+        val uid = auth.currentUser?.uid ?: return OrderResult(false, error = "User not authenticated")
+        val email = auth.currentUser?.email
 
         return try {
-            val data = hashMapOf("amount" to 330000) // 3300 INR in paise
-            val result = functions
-                .getHttpsCallable("createEliteOrder")
-                .call(data)
-                .await()
-
-            val resultData = result.data as? Map<*, *>
-            val orderId = resultData?.get("order_id") as? String
-            val paymentUrl = resultData?.get("payment_url") as? String
-
-            if (orderId != null && paymentUrl != null) {
-                OrderResult(true, orderId, paymentUrl)
+            val req = com.rivavafi.universal.data.network.CreatePaymentOrderRequest(
+                userId = uid,
+                userEmail = email,
+                plan = "elite_399",
+                amountPaise = 39900 // 399 INR
+            )
+            val response = com.rivavafi.universal.data.network.RetrofitClient.apiService.createPaymentOrder(req)
+            if (response.isSuccessful && response.body()?.success == true) {
+                val data = response.body()?.data
+                val orderId = data?.orderId
+                val paymentUrl = data?.paymentUrl
+                if (orderId != null) {
+                    OrderResult(true, orderId, paymentUrl)
+                } else {
+                    OrderResult(false, error = "Invalid response from payment gateway")
+                }
             } else {
-                OrderResult(false, error = "Invalid response from server")
+                OrderResult(false, error = response.body()?.message ?: "Failed to create payment order")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error creating Elite order", e)
-            OrderResult(false, error = e.message ?: "Unknown error")
+            Log.e(TAG, "Error creating Elite order via backend", e)
+            OrderResult(false, error = e.message ?: "Network error connecting to payment gateway")
         }
     }
 
-    suspend fun verifyElitePayment(orderId: String): Boolean {
-        if (auth.currentUser?.uid == null) return false
+    suspend fun verifyElitePayment(orderId: String, paymentId: String? = null, signature: String? = null): Boolean {
+        val uid = auth.currentUser?.uid ?: return false
 
         return try {
-            val data = hashMapOf("order_id" to orderId)
-            val result = functions
-                .getHttpsCallable("verifyElitePayment")
-                .call(data)
-                .await()
+            val req = com.rivavafi.universal.data.network.VerifyPaymentRequest(
+                userId = uid,
+                orderId = orderId,
+                paymentId = paymentId,
+                signature = signature
+            )
+            val response = com.rivavafi.universal.data.network.RetrofitClient.apiService.verifyPayment(req)
+            val isSuccess = response.isSuccessful && response.body()?.success == true
 
-            val resultData = result.data as? Map<*, *>
-            resultData?.get("success") == true
+            if (isSuccess) {
+                val subData = hashMapOf(
+                    "isElite" to true,
+                    "plan" to "elite_399",
+                    "minutesRemaining" to 600,
+                    "monthlyMinutes" to 600,
+                    "autoRenew" to false,
+                    "nextBillingDate" to com.google.firebase.Timestamp(java.util.Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)),
+                    "paymentStatus" to "success",
+                    "orderId" to orderId
+                )
+                firestore.collection("users").document(uid).collection("subscription").document("current")
+                    .set(subData, com.google.firebase.firestore.SetOptions.merge())
+
+                firestore.collection("therivdata").document(uid)
+                    .set(mapOf("premiumStatus" to true, "isElite" to true), com.google.firebase.firestore.SetOptions.merge())
+
+                firestore.collection("therivavadata").document(uid)
+                    .set(mapOf("premiumStatus" to true, "isElite" to true), com.google.firebase.firestore.SetOptions.merge())
+                true
+            } else {
+                false
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error verifying Elite payment", e)
             false
