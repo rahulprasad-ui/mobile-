@@ -371,6 +371,11 @@ class AuthViewModel @Inject constructor(
                 userPreferencesRepository.saveUserName(name)
 
                 repository.sendVerificationEmail(email, uid)
+                try {
+                    emailService.sendWelcomeEmail(email, name)
+                } catch (emailErr: Exception) {
+                    Log.w("AuthViewModel", "Welcome email failed: ${emailErr.message}")
+                }
 
                 _errorMessage.value = "Registration successful. Please check your inbox to verify."
                 _authState.value = AuthState.IDLE
