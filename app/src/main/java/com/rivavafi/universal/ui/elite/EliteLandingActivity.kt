@@ -284,24 +284,19 @@ fun EliteLandingScreen(
         }
 
         // Bottom CTA Overlay
-        Box(
+        Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color.Black.copy(alpha = 0.9f),
-                            Color(0xFF050505)
-                        )
-                    )
-                )
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxWidth(),
+            color = Color(0xFF0D0D0D),
+            shadowElevation = 16.dp,
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
