@@ -1,0 +1,59 @@
+# =========================================================================
+# Android & Gradle Git Ignore Rules
+# =========================================================================
+
+# Built application files
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+**/build/
+captures/
+**/captures/
+.externalNativeBuild/
+.cxx/
+
+# Gradle files
+.gradle/
+**/gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# Local configuration file (SDK location, signing keys, API tokens)
+local.properties
+
+# Signing Keystore files & credentials
+*.jks
+*.keystore
+*.p12
+*.key
+signing.properties
+
+# Firebase & Google Services secrets (enable if keeping google-services private)
+# google-services.json
+
+# Android Studio & JetBrains IDE
+.idea/
+*.iml
+.navigation/
+cmake-build-*/
+.attach_pid*
+
+# OS specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Logs & profiling
+*.log
+*.hprof

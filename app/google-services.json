@@ -1,0 +1,64 @@
+{
+  "project_info": {
+    "project_number": "5943406620",
+    "firebase_url": "https://rivava-signin-default-rtdb.firebaseio.com",
+    "project_id": "rivava-signin",
+    "storage_bucket": "rivava-signin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:5943406620:android:5b72af140cb9ecedf5afd9",
+        "android_client_info": {
+          "package_name": "com.rivavafi.universal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "5943406620-9qslquk3kt1490go05et4ui5j2n8l9ob.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rivavafi.universal",
+            "certificate_hash": "460e2b3acb586946945b85f5f93e2f8f657efb3e"
+          }
+        },
+        {
+          "client_id": "5943406620-hdq74isd3fnsq87rfhc5lmojj1fruao9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rivavafi.universal",
+            "certificate_hash": "10c5ecfe2783378bde55e06a29e2487becaaf3ad"
+          }
+        },
+        {
+          "client_id": "5943406620-q1tr59fh8nm76lu8p0rgr2k7gq4i8h4v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rivavafi.universal",
+            "certificate_hash": "b30b1518798893d980c565f8ee08a2bea54390ac"
+          }
+        },
+        {
+          "client_id": "5943406620-b3i4u0s2kgh3kqmnfejb2nd4pfl8udpv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1xtcvHp24222s02FQUXmiivVik3Apv9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "5943406620-b3i4u0s2kgh3kqmnfejb2nd4pfl8udpv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
