@@ -205,186 +205,192 @@ fun EliteLandingScreen(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF050505))) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 160.dp)
-        ) {
-            item {
-                HeroSection(seatsRemaining, eliteConfig.totalSeats)
-            }
-            item {
-                Spacer(modifier = Modifier.height(28.dp))
-                SectionWhyJoin()
-            }
-            item {
-                Spacer(modifier = Modifier.height(28.dp))
-                SectionMembershipExperience()
-            }
-            item {
-                Spacer(modifier = Modifier.height(28.dp))
-                SectionPricing()
-            }
-        }
+    var isProcessingPayment by remember { mutableStateOf(false) }
+    var showPaymentSuccessDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val eliteRepository = remember { com.rivavafi.universal.data.repository.EliteRepository() }
 
-        // Custom Back Button
-        Box(
-            modifier = Modifier
-                .statusBarsPadding()
-                .padding(top = 12.dp, start = 16.dp)
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.6f))
-                .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
-                .clickable { onBack() },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(20.dp))
-        }
-
-        var isProcessingPayment by remember { mutableStateOf(false) }
-        var showPaymentSuccessDialog by remember { mutableStateOf(false) }
-        val coroutineScope = rememberCoroutineScope()
-        val eliteRepository = remember { com.rivavafi.universal.data.repository.EliteRepository() }
-
-        if (showPaymentSuccessDialog) {
-            AlertDialog(
-                onDismissRequest = {
-                    showPaymentSuccessDialog = false
-                    context.startActivity(Intent(context, EliteDashboardActivity::class.java))
-                    (context as? android.app.Activity)?.finish()
-                },
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF00E471))
-                        Spacer(Modifier.width(8.dp))
-                        Text("🎉 Elite Unlocked!", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                },
-                text = {
-                    Text(
-                        "Your payment of ₹399 was successful!\n\nYou now have full Rivava Elite access with 600 monthly minutes and your 1-on-1 private advisory session is ready to book.",
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                },
-                containerColor = Color(0xFF161616),
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showPaymentSuccessDialog = false
-                            context.startActivity(Intent(context, EliteDashboardActivity::class.java))
-                            (context as? android.app.Activity)?.finish()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37))
-                    ) {
-                        Text("Go to Elite Dashboard", color = Color.Black, fontWeight = FontWeight.Bold)
-                    }
+    if (showPaymentSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showPaymentSuccessDialog = false
+                context.startActivity(Intent(context, EliteDashboardActivity::class.java))
+                (context as? android.app.Activity)?.finish()
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF00E471))
+                    Spacer(Modifier.width(8.dp))
+                    Text("🎉 Elite Unlocked!", color = Color.White, fontWeight = FontWeight.Bold)
                 }
-            )
-        }
-
-        // Bottom CTA Overlay
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
-            color = Color(0xFF0D0D0D),
-            shadowElevation = 16.dp,
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            },
+            text = {
+                Text(
+                    "Your payment of ₹399 was successful!\n\nYou now have full Rivava Elite access with 600 monthly minutes and your 1-on-1 private advisory session is ready to book.",
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            },
+            containerColor = Color(0xFF161616),
+            confirmButton = {
                 Button(
                     onClick = {
-                        isProcessingPayment = true
-                        coroutineScope.launch {
-                            try {
-                                val res = eliteRepository.createEliteOrder()
-                                if (res.success && res.orderId != null) {
-                                    val verify = eliteRepository.verifyElitePayment(res.orderId)
-                                    isProcessingPayment = false
-                                    if (verify) {
-                                        showPaymentSuccessDialog = true
+                        showPaymentSuccessDialog = false
+                        context.startActivity(Intent(context, EliteDashboardActivity::class.java))
+                        (context as? android.app.Activity)?.finish()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37))
+                ) {
+                    Text("Go to Elite Dashboard", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    Scaffold(
+        containerColor = Color(0xFF050505),
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFF0D0D0D),
+                shadowElevation = 16.dp,
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            isProcessingPayment = true
+                            coroutineScope.launch {
+                                try {
+                                    val res = eliteRepository.createEliteOrder()
+                                    if (res.success && res.orderId != null) {
+                                        val verify = eliteRepository.verifyElitePayment(res.orderId)
+                                        isProcessingPayment = false
+                                        if (verify) {
+                                            showPaymentSuccessDialog = true
+                                        } else {
+                                            Toast.makeText(context, "Payment verification pending. Please check connection.", Toast.LENGTH_LONG).show()
+                                        }
                                     } else {
-                                        Toast.makeText(context, "Payment verification pending. Please check connection.", Toast.LENGTH_LONG).show()
+                                        isProcessingPayment = false
+                                        Toast.makeText(context, res.error ?: "Failed to initiate payment", Toast.LENGTH_SHORT).show()
                                     }
-                                } else {
+                                } catch (e: Exception) {
                                     isProcessingPayment = false
-                                    Toast.makeText(context, res.error ?: "Failed to initiate payment", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Payment error: ${e.message}", Toast.LENGTH_SHORT).show()
                                 }
-                            } catch (e: Exception) {
-                                isProcessingPayment = false
-                                Toast.makeText(context, "Payment error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        enabled = !isProcessingPayment && !isFull,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFD4AF37),
+                            disabledContainerColor = Color.DarkGray
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        if (isProcessingPayment) {
+                            CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(10.dp))
+                            Text("Processing ₹399 Payment...", color = Color.Black, fontWeight = FontWeight.Bold)
+                        } else if (isFull) {
+                            Text("Membership Full", color = Color.LightGray, fontWeight = FontWeight.Bold)
+                        } else {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Pay ₹399 & Unlock Elite", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                                Spacer(Modifier.width(6.dp))
+                                Text("(+ Free Session)", color = Color(0xFF1E293B), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
-                    },
-                    enabled = !isProcessingPayment && !isFull,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFD4AF37),
-                        disabledContainerColor = Color.DarkGray
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    if (isProcessingPayment) {
-                        CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                        Spacer(Modifier.width(10.dp))
-                        Text("Processing ₹399 Payment...", color = Color.Black, fontWeight = FontWeight.Bold)
-                    } else if (isFull) {
-                        Text("Membership Full", color = Color.LightGray, fontWeight = FontWeight.Bold)
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Pay ₹399 & Unlock Elite", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
-                            Spacer(Modifier.width(6.dp))
-                            Text("(+ Free Session)", color = Color(0xFF1E293B), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        }
                     }
-                }
 
-                OutlinedButton(
-                    onClick = {
-                        com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
-                            context = context,
-                            username = finalUserName,
-                            email = finalUserEmail,
-                            phoneNumber = phoneNumber,
-                            preference = "Rivava Elite (399 Offer)",
-                            premiumStatus = userPremiumStatus
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, Color(0xFFD4AF37).copy(alpha = 0.5f))
-                ) {
-                    Text("Chat With Advisor on WhatsApp", color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    OutlinedButton(
+                        onClick = {
+                            com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
+                                context = context,
+                                username = finalUserName,
+                                email = finalUserEmail,
+                                phoneNumber = phoneNumber,
+                                preference = "Rivava Elite (399 Offer)",
+                                premiumStatus = userPremiumStatus
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, Color(0xFFD4AF37).copy(alpha = 0.5f))
+                    ) {
+                        Text("Chat With Advisor on WhatsApp", color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
                 }
             }
         }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 24.dp)
+            ) {
+                item {
+                    HeroSection(seatsRemaining, eliteConfig.totalSeats)
+                }
+                item {
+                    Spacer(modifier = Modifier.height(28.dp))
+                    SectionWhyJoin()
+                }
+                item {
+                    Spacer(modifier = Modifier.height(28.dp))
+                    SectionMembershipExperience()
+                }
+                item {
+                    Spacer(modifier = Modifier.height(28.dp))
+                    SectionPricing()
+                }
+            }
 
-        if (isConnecting) {
+            // Custom Back Button
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.7f)),
+                    .statusBarsPadding()
+                    .padding(top = 12.dp, start = 16.dp)
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+                    .clickable { onBack() },
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = Color(0xFFD4AF37))
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Connecting you to Rivava Elite...",
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(20.dp))
+            }
+
+            if (isConnecting) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.7f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = Color(0xFFD4AF37))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "Connecting you to Rivava Elite...",
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
                 }
             }
         }
