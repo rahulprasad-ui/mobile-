@@ -91,7 +91,7 @@ fun CalculatorsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -130,31 +130,38 @@ fun CalculatorsScreen(
                             tint = Color.White,
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "Back",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            text = "Calculators",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = Color.White
                         )
                     }
                 }
 
                 IconButton(onClick = { showHistorySheet = true }) {
-                    BadgedBox(
-                        badge = {
-                            if (allHistory.isNotEmpty()) {
+                    if (allHistory.isNotEmpty()) {
+                        BadgedBox(
+                            badge = {
                                 Badge(
                                     containerColor = AccentBlue,
                                     contentColor = Color.Black
                                 ) {
                                     Text(
-                                        text = "${allHistory.size}",
-                                        fontWeight = FontWeight.Bold
+                                        text = "${allHistory.size.coerceAtMost(99)}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
                                     )
                                 }
                             }
+                        ) {
+                            Icon(
+                                Icons.Outlined.History,
+                                contentDescription = "Calculation History",
+                                tint = AccentBlue
+                            )
                         }
-                    ) {
+                    } else {
                         Icon(
                             Icons.Outlined.History,
                             contentDescription = "Calculation History",
@@ -293,7 +300,7 @@ fun CalculatorsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(18.dp),
+                                .padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -304,44 +311,59 @@ fun CalculatorsScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(48.dp)
+                                        .size(46.dp)
                                         .background(item.color.copy(alpha = 0.15f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(item.icon, fontSize = 22.sp)
+                                    Text(item.icon, fontSize = 20.sp)
                                 }
-                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
                                         Text(
                                             text = item.title,
                                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = Color.White
+                                            color = Color.White,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
                                         )
                                         Surface(
-                                            color = item.color.copy(alpha = 0.2f),
+                                            color = item.color.copy(alpha = 0.18f),
                                             shape = RoundedCornerShape(6.dp)
                                         ) {
                                             Text(
                                                 text = item.tag,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
-                                                color = item.color
+                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, fontSize = 9.sp),
+                                                color = item.color,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
                                     Text(
                                         text = item.subtitle,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = Color(0xFF94A3B8)
+                                        color = Color(0xFF94A3B8),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
+
+                            Spacer(Modifier.width(8.dp))
 
                             Icon(
                                 Icons.Default.ChevronRight,
                                 contentDescription = "Open",
                                 tint = item.color,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }
@@ -360,7 +382,7 @@ fun CalculatorsScreen(
                     )
                 }
 
-                Spacer(Modifier.height(100.dp))
+                Spacer(Modifier.height(140.dp))
             }
         } else {
             // -------------------------------------------------------------

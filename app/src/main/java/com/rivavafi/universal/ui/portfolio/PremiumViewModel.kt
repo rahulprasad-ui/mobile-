@@ -44,21 +44,35 @@ class PremiumViewModel @Inject constructor(
         }
     }
 
-    fun startPremiumPurchase(amountPaise: Int = 1100) {
+    fun startPremiumPurchase(amountPaise: Int = 39900) {
         if (_paymentState.value.uiState == PaymentUiState.CREATING_ORDER ||
             _paymentState.value.uiState == PaymentUiState.VERIFYING) return
 
         _paymentState.value = PaymentState(uiState = PaymentUiState.CREATING_ORDER)
+        _keyVerificationState.value = KeyVerificationState.Verifying
 
         viewModelScope.launch {
             val result = repository.createUroPayOrder(amountPaise)
             if (result.success && result.orderId != null) {
-                _paymentState.value = PaymentState(uiState = PaymentUiState.CHECKOUT_READY, orderData = result)
+                _paymentState.value = PaymentState(uiState = PaymentUiState.VERIFYING, orderData = result)
+                val verified = repository.verifyUroPayPayment(result.orderId)
+                if (verified) {
+                    _paymentState.value = PaymentState(uiState = PaymentUiState.SUCCESS)
+                    _keyVerificationState.value = KeyVerificationState.Success("Premium unlocked successfully!")
+                } else {
+                    _paymentState.value = PaymentState(
+                        uiState = PaymentUiState.ERROR,
+                        errorMessage = "Payment verification pending. Please check connection."
+                    )
+                    _keyVerificationState.value = KeyVerificationState.Error("Payment verification failed. Please try again.")
+                }
             } else {
+                val err = result.error ?: "Failed to create order"
                 _paymentState.value = PaymentState(
                     uiState = PaymentUiState.ERROR,
-                    errorMessage = result.error ?: "Failed to create order"
+                    errorMessage = err
                 )
+                _keyVerificationState.value = KeyVerificationState.Error(err)
             }
         }
     }

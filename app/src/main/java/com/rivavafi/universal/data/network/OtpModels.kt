@@ -17,7 +17,14 @@ data class VerifyOtpRequest(
 )
 
 data class VerifyOtpResponse(
-    @SerializedName("token") val token: String?,
-    @SerializedName("message") val message: String?,
-    @SerializedName("error") val error: String?
+    @SerializedName("token") val token: String? = null,
+    @SerializedName("data") val data: VerifyOtpData? = null,
+    @SerializedName("message") val message: String? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class VerifyOtpData(
+    @SerializedName("token") val token: String? = null,
+    @SerializedName("uid") val uid: String? = null,
+    @SerializedName("phone") val phone: String? = null
 )

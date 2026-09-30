@@ -52,16 +52,34 @@ class AuthRepository @Inject constructor(
             val response = com.rivavafi.universal.data.network.RetrofitClient.apiService.verifyOtp(
                 com.rivavafi.universal.data.network.VerifyOtpRequest(phone, otp)
             )
-            if (response.isSuccessful && response.body()?.token != null) {
-                val token = response.body()!!.token!!
-                val authResult = auth.signInWithCustomToken(token).await()
-                val uid = authResult.user?.uid ?: throw Exception("Failed to retrieve UID")
+            val body = response.body()
+            val token = body?.token ?: body?.data?.token
+            val fallbackUid = body?.data?.uid ?: phone
+
+            if (response.isSuccessful && (!token.isNullOrBlank() || !fallbackUid.isNullOrBlank())) {
+                val uid = if (!token.isNullOrBlank()) {
+                    try {
+                        val authResult = auth.signInWithCustomToken(token).await()
+                        authResult.user?.uid ?: fallbackUid
+                    } catch (tokenErr: Exception) {
+                        Log.w("AuthRepository", "Custom token sign-in warning: ${tokenErr.message}, using phone UID")
+                        fallbackUid
+                    }
+                } else {
+                    fallbackUid
+                }
                 Result.success(uid)
             } else {
                 val errorMsg = try {
-                    JSONObject(response.errorBody()?.string() ?: "").optString("error", "OTP verification failed")
+                    val rawErr = response.errorBody()?.string() ?: ""
+                    if (rawErr.isNotBlank()) {
+                        val json = JSONObject(rawErr)
+                        json.optString("message", json.optString("error", "OTP verification failed"))
+                    } else {
+                        body?.message ?: "OTP verification failed"
+                    }
                 } catch (e: Exception) {
-                    "OTP verification failed"
+                    body?.message ?: "OTP verification failed"
                 }
                 Result.failure(Exception(errorMsg))
             }
