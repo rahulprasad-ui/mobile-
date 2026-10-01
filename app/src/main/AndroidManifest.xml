@@ -32,6 +32,8 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https" android:host="rivava.in" android:pathPrefix="/verify"/>
                 <data android:scheme="https" android:host="rivava.in" android:pathPrefix="/reset"/>
+                <data android:scheme="https" android:host="backend-453t.onrender.com" android:pathPrefix="/reset"/>
+                <data android:scheme="https" android:host="backend-453t.onrender.com" android:pathPrefix="/verify"/>
                 <data android:scheme="https" android:host="rivava-signin.firebaseapp.com" android:pathPrefix="/__/auth/links"/>
                 <data android:scheme="https" android:host="rivava-signin.firebaseapp.com" android:pathPrefix="/__/auth/action"/>
                 <data android:scheme="https" android:host="rivava-signin.web.app" android:pathPrefix="/__/auth/action"/>
@@ -42,6 +44,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="backend-453t.onrender.com"/>
                 <data android:scheme="https" android:host="rivava-signin.firebaseapp.com"/>
                 <data android:scheme="https" android:host="rivava-signin.web.app"/>
                 <data android:scheme="https" android:host="rivavatrackfi.firebaseapp.com"/>
@@ -85,6 +88,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="backend-453t.onrender.com" android:pathPrefix="/reset"/>
                 <data android:scheme="https" android:host="rivava.in" android:pathPrefix="/reset"/>
                 <data android:scheme="rivava" android:host="reset"/>
             </intent-filter>
