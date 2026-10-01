@@ -81,12 +81,19 @@
             android:name=".ui.auth.SetNewPasswordActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
+            <!-- Web App Links -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https" android:host="backend-453t.onrender.com" android:pathPrefix="/reset"/>
                 <data android:scheme="https" android:host="rivava.in" android:pathPrefix="/reset"/>
+            </intent-filter>
+            <!-- Custom Scheme Links (rivava://reset) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="rivava" android:host="reset"/>
             </intent-filter>
         </activity>
