@@ -119,7 +119,7 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                 if (response.isSuccessful && response.body()?.success == true) {
                     val data = response.body()?.data
                     val orderId = data?.orderId
-                    val keyId = data?.keyId?.takeIf { it.isNotBlank() && !it.contains("mock") } ?: "rzp_test_1DP5mmOlF5G5ag"
+                    val keyId = data?.keyId?.takeIf { it.isNotBlank() && !it.contains("mock") } ?: "rzp_test_Tiaq1UtYWGxArt"
                     currentOrderId = orderId
 
                     if (orderId != null) {
@@ -140,7 +140,7 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
 
     private fun launchRazorpayCheckout(orderId: String, keyId: String, email: String, amountPaise: Int) {
         val checkout = Checkout()
-        val effectiveKey = if (keyId.isBlank() || keyId.contains("mock")) "rzp_test_1DP5mmOlF5G5ag" else keyId
+        val effectiveKey = if (keyId.isBlank() || keyId.contains("mock")) "rzp_test_Tiaq1UtYWGxArt" else keyId
         checkout.setKeyID(effectiveKey)
 
         try {
