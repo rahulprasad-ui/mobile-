@@ -54,8 +54,17 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
     private var isLoading = mutableStateOf(true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Remove preload to prevent Razorpay compatibility check popup
-        // Checkout.preload(applicationContext)
+        // Required: initializes the AndroidX lifecycle. Without this the
+        // Razorpay SDK cannot launch its CheckoutActivity and checkout
+        // silently fails to open.
+        super.onCreate(savedInstanceState)
+
+        // Warms up checkout resources so the form opens quickly.
+        try {
+            Checkout.preload(applicationContext)
+        } catch (e: Exception) {
+            // Preload is an optimization only; ignore failures.
+        }
 
         plan = intent.getStringExtra("plan") ?: "portfolio_premium"
         amountPaise = intent.getIntExtra("amountPaise", 39900)
