@@ -123,7 +123,8 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                     currentOrderId = orderId
 
                     if (orderId != null) {
-                        statusMessage.value = "Opening Razorpay Gateway (Test Mode)..."
+                        val isTestKey = keyId.startsWith("rzp_test_")
+                        statusMessage.value = if (isTestKey) "Opening Razorpay Gateway (Test Mode)..." else "Opening Secure Payment Gateway..."
                         launchRazorpayCheckout(orderId, keyId, email, amountPaise)
                     } else {
                         failPayment("Invalid order response from payment gateway.")
