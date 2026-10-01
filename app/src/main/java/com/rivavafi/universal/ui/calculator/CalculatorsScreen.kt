@@ -451,7 +451,7 @@ fun CalculatorsScreen(
                     Text("Save to Calculation History", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
 
-                Spacer(Modifier.height(80.dp))
+                Spacer(Modifier.height(140.dp))
             }
         }
     }
@@ -583,7 +583,7 @@ fun PercentageCalculatorSection(viewModel: CalculatorViewModel) {
     val result = viewModel.calculatePercentage()
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Result Hero
+        // Result Hero with Direct Top Edit
         ResultHeroCard(
             title = "${CalculatorViewModel.formatDecimal(percent)}% of ₹${CalculatorViewModel.formatCurrency(baseAmount)}",
             primaryResult = "₹${CalculatorViewModel.formatCurrency(result.resultAmount)}",
@@ -591,7 +591,11 @@ fun PercentageCalculatorSection(viewModel: CalculatorViewModel) {
                 ResultPill("Base Value", "₹${CalculatorViewModel.formatCurrency(baseAmount)}", AccentBlue),
                 ResultPill("Value + ${CalculatorViewModel.formatDecimal(percent)}%", "₹${CalculatorViewModel.formatCurrency(result.addedTotal)}", AccentGreen),
                 ResultPill("Value - ${CalculatorViewModel.formatDecimal(percent)}%", "₹${CalculatorViewModel.formatCurrency(result.subtractedTotal)}", AccentAmber)
-            )
+            ),
+            editableValue = baseAmount,
+            editableTitle = "Base Amount",
+            editableUnit = "₹",
+            onEditValueChange = { viewModel.percentBaseAmount.value = it }
         )
 
         // Percentage Presets
@@ -1160,7 +1164,7 @@ fun MdrCalculatorSection(viewModel: CalculatorViewModel) {
             }
         }
 
-        // Result Hero
+        // Result Hero with Direct Top Edit Option
         ResultHeroCard(
             title = "MDR Charge on ₹${CalculatorViewModel.formatCurrency(amount)}",
             primaryResult = "₹${CalculatorViewModel.formatDecimal(result.actualMdr)}",
@@ -1168,7 +1172,11 @@ fun MdrCalculatorSection(viewModel: CalculatorViewModel) {
                 ResultPill("Transaction Amount", "₹${CalculatorViewModel.formatCurrency(amount)}", AccentBlue),
                 ResultPill("Effective Rate", "${CalculatorViewModel.formatDecimal(result.effectiveRatePercent, 3)}%", if (result.isThresholdWaived) AccentGreen else AccentPurple),
                 ResultPill("Net Merchant Payout", "₹${CalculatorViewModel.formatCurrency(result.netPayout)}", AccentGreen)
-            )
+            ),
+            editableValue = amount,
+            editableTitle = "Transaction Amount",
+            editableUnit = "₹",
+            onEditValueChange = { viewModel.mdrTransactionAmount.value = it }
         )
 
         // Quick Amount Presets
@@ -1232,7 +1240,7 @@ fun EmiCalculatorSection(viewModel: CalculatorViewModel) {
     val result = viewModel.calculateEmi()
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Result Hero
+        // Result Hero with Direct Top Edit
         ResultHeroCard(
             title = "Monthly Loan EMI",
             primaryResult = "₹${CalculatorViewModel.formatCurrency(result.monthlyEmi)} / mo",
@@ -1240,7 +1248,11 @@ fun EmiCalculatorSection(viewModel: CalculatorViewModel) {
                 ResultPill("Principal Amount", "₹${CalculatorViewModel.formatCurrency(loanAmount)}", AccentBlue),
                 ResultPill("Total Interest", "₹${CalculatorViewModel.formatCurrency(result.totalInterest)}", AccentRed),
                 ResultPill("Total Payable", "₹${CalculatorViewModel.formatCurrency(result.totalPayment)}", AccentAmber)
-            )
+            ),
+            editableValue = loanAmount,
+            editableTitle = "Loan Amount",
+            editableUnit = "₹",
+            onEditValueChange = { viewModel.emiLoanAmount.value = it }
         )
 
         // Visual Breakdown Donut Chart Card
@@ -1789,8 +1801,17 @@ data class ResultPill(val label: String, val value: String, val color: Color)
 fun ResultHeroCard(
     title: String,
     primaryResult: String,
-    pills: List<ResultPill>
+    pills: List<ResultPill>,
+    editableValue: Double? = null,
+    editableTitle: String? = null,
+    editableUnit: String = "₹",
+    onEditValueChange: ((Double) -> Unit)? = null
 ) {
+    var showTopEditDialog by remember { mutableStateOf(false) }
+    var tempEditText by remember(editableValue) {
+        mutableStateOf(editableValue?.let { if (it % 1.0 == 0.0) it.toInt().toString() else String.format(Locale.US, "%.2f", it) } ?: "")
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1809,20 +1830,61 @@ fun ResultHeroCard(
                 .padding(22.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFF94A3B8)
-                )
-                Text(
-                    text = primaryResult,
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-0.5).sp
-                    ),
-                    color = Color.White
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color(0xFF94A3B8)
+                    )
+                    Text(
+                        text = primaryResult,
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = Color.White
+                    )
+                }
+
+                if (editableValue != null && onEditValueChange != null) {
+                    Surface(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable {
+                                tempEditText = if (editableValue % 1.0 == 0.0) editableValue.toInt().toString() else String.format(Locale.US, "%.2f", editableValue)
+                                showTopEditDialog = true
+                            },
+                        color = AccentBlue.copy(alpha = 0.18f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AccentBlue.copy(alpha = 0.6f)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Edit,
+                                contentDescription = "Edit Input",
+                                tint = AccentBlue,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Edit",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
+                                color = AccentBlue
+                            )
+                        }
+                    }
+                }
             }
 
             HorizontalDivider(color = Color(0xFF1E293B), thickness = 1.dp)
@@ -1855,6 +1917,67 @@ fun ResultHeroCard(
             }
         }
     }
+
+    if (showTopEditDialog && editableValue != null && onEditValueChange != null) {
+        AlertDialog(
+            onDismissRequest = { showTopEditDialog = false },
+            containerColor = Color(0xFF0F172A),
+            title = {
+                Text(
+                    text = "Edit ${editableTitle ?: "Amount"}",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Enter custom ${editableTitle ?: "value"} in $editableUnit:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF94A3B8)
+                    )
+                    OutlinedTextField(
+                        value = tempEditText,
+                        onValueChange = { tempEditText = it },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Done
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = AccentBlue,
+                            unfocusedBorderColor = CardBorder,
+                            focusedContainerColor = InputBg,
+                            unfocusedContainerColor = InputBg
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        tempEditText.toDoubleOrNull()?.let {
+                            onEditValueChange(it)
+                        }
+                        showTopEditDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Apply & Calculate", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTopEditDialog = false }) {
+                    Text("Cancel", color = Color(0xFF94A3B8))
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -1880,7 +2003,7 @@ fun CalculatorNumberInput(
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1889,64 +2012,90 @@ fun CalculatorNumberInput(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = Color.White
                 )
 
                 if (isEditingText) {
-                    OutlinedTextField(
-                        value = textValue,
-                        onValueChange = {
-                            textValue = it
-                            it.toDoubleOrNull()?.let { num ->
-                                onValueChange(num)
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Decimal,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = textValue,
+                            onValueChange = {
+                                textValue = it
+                                it.toDoubleOrNull()?.let { num ->
+                                    onValueChange(num)
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    isEditingText = false
+                                    focusManager.clearFocus()
+                                }
+                            ),
+                            modifier = Modifier
+                                .width(140.dp)
+                                .height(50.dp),
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = AccentBlue,
+                                unfocusedBorderColor = CardBorder,
+                                focusedContainerColor = InputBg,
+                                unfocusedContainerColor = InputBg
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true
+                        )
+
+                        IconButton(
+                            onClick = {
                                 isEditingText = false
                                 focusManager.clearFocus()
-                            }
-                        ),
-                        modifier = Modifier
-                            .width(130.dp)
-                            .height(48.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = AccentBlue,
-                            unfocusedBorderColor = CardBorder,
-                            focusedContainerColor = InputBg,
-                            unfocusedContainerColor = InputBg
-                        ),
-                        shape = RoundedCornerShape(10.dp),
-                        singleLine = true
-                    )
+                            },
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(AccentBlue, RoundedCornerShape(12.dp))
+                        ) {
+                            Icon(
+                                Icons.Outlined.Check,
+                                contentDescription = "Done",
+                                tint = Color.Black,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
                 } else {
                     Surface(
-                        modifier = Modifier.clickable { isEditingText = true },
-                        color = AccentBlue.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(10.dp)
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable { isEditingText = true },
+                        color = AccentBlue.copy(alpha = 0.2f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AccentBlue.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(14.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
                                 text = if (unit == "₹") "₹${CalculatorViewModel.formatCurrency(value)}" else if (unit == "%") "${CalculatorViewModel.formatDecimal(value)}%" else "${CalculatorViewModel.formatDecimal(value)} $unit",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
                                 color = AccentBlue
                             )
                             Icon(
                                 Icons.Outlined.Edit,
                                 contentDescription = "Edit value",
                                 tint = AccentBlue,
-                                modifier = Modifier.size(12.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
