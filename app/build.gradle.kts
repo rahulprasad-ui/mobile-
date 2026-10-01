@@ -59,7 +59,7 @@ android {
         buildConfigField("String", "FINNHUB_API_KEY", "\"${System.getenv("FINNHUB_API_KEY") ?: localProperties.getProperty("finnhub.apikey") ?: ""}\"")
         buildConfigField("String", "RESEND_API_KEY", "\"${System.getenv("RESEND_API_KEY") ?: localProperties.getProperty("resend.apikey") ?: ""}\"")
         buildConfigField("String", "MASSIVE_API_KEY", "\"${System.getenv("MASSIVE_API_KEY") ?: localProperties.getProperty("massive.apikey") ?: ""}\"")
-        buildConfigField("String", "BACKEND_URL", "\"${System.getenv("BACKEND_URL") ?: localProperties.getProperty("backend.url") ?: "https://backend-6fey.onrender.com/"}\"")
+        buildConfigField("String", "BACKEND_URL", "\"${System.getenv("BACKEND_URL") ?: localProperties.getProperty("backend.url") ?: "https://backend-453t.onrender.com/"}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
