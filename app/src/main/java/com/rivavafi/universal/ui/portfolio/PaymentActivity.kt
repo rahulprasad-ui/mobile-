@@ -119,11 +119,11 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                 if (response.isSuccessful && response.body()?.success == true) {
                     val data = response.body()?.data
                     val orderId = data?.orderId
-                    val keyId = data?.keyId ?: "rzp_test_mock_key_id"
+                    val keyId = data?.keyId?.takeIf { it.isNotBlank() && !it.contains("mock") } ?: "rzp_test_1DP5mmOlF5G5ag"
                     currentOrderId = orderId
 
                     if (orderId != null) {
-                        statusMessage.value = "Opening Razorpay Gateway..."
+                        statusMessage.value = "Opening Razorpay Gateway (Test Mode)..."
                         launchRazorpayCheckout(orderId, keyId, email, amountPaise)
                     } else {
                         failPayment("Invalid order response from payment gateway.")
@@ -139,7 +139,8 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
 
     private fun launchRazorpayCheckout(orderId: String, keyId: String, email: String, amountPaise: Int) {
         val checkout = Checkout()
-        checkout.setKeyID(keyId)
+        val effectiveKey = if (keyId.isBlank() || keyId.contains("mock")) "rzp_test_1DP5mmOlF5G5ag" else keyId
+        checkout.setKeyID(effectiveKey)
 
         try {
             val isOfficialRazorpayOrder = orderId.startsWith("order_") && 
