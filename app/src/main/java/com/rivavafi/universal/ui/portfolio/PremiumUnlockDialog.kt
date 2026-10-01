@@ -126,7 +126,7 @@ fun PremiumUnlockDialog(
                             Text(
                                 "Upgrade to Rivava Premium",
                                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = Color.White,
                                 textAlign = TextAlign.Center
                             )
 
@@ -150,7 +150,7 @@ fun PremiumUnlockDialog(
                                         Text(
                                             text = benefit,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface
+                                            color = Color.White.copy(alpha = 0.9f)
                                         )
                                     }
                                 }
@@ -160,7 +160,7 @@ fun PremiumUnlockDialog(
                             Text(
                                 "Enter Secret Access Key",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = Color(0xFFD4AF37),
                                 textAlign = TextAlign.Center
                             )
 
@@ -286,7 +286,7 @@ fun PremiumUnlockDialog(
                             Text(
                                 "Verifying key with secure server...",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = Color.White,
                                 textAlign = TextAlign.Center
                             )
                             Text(

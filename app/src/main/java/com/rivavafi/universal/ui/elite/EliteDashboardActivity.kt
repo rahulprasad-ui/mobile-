@@ -43,9 +43,11 @@ class EliteDashboardActivity : ComponentActivity() {
             val userModel = profileState.userModel
 
             val userPhone = userModel?.phone?.takeIf { it.isNotBlank() } ?: userModel?.phoneno?.takeIf { it.isNotBlank() } ?: auth.currentUser?.phoneNumber ?: ""
-            var showSecretDialog by remember { mutableStateOf(false) }
+            val eliteViewModel: EliteViewModel = hiltViewModel()
+            val eliteSubscription by eliteViewModel.subscription.collectAsState()
             val prefs = getSharedPreferences("RivavaElitePrefs", MODE_PRIVATE)
-            var isEliteUnlocked by remember { mutableStateOf(prefs.getBoolean("elite_unlocked", false)) }
+            var localUnlocked by remember { mutableStateOf(prefs.getBoolean("elite_unlocked", false)) }
+            val isEliteUnlocked = eliteSubscription.isElite || localUnlocked
             var showWhatsAppDialog by remember { mutableStateOf(false) }
 
             val paymentLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -53,8 +55,7 @@ class EliteDashboardActivity : ComponentActivity() {
             ) { result ->
                 if (result.resultCode == RESULT_OK) {
                     prefs.edit().putBoolean("elite_unlocked", true).apply()
-                    isEliteUnlocked = true
-                    showSecretDialog = false
+                    localUnlocked = true
                     Toast.makeText(this@EliteDashboardActivity, "🎉 Elite Membership Activated!", Toast.LENGTH_LONG).show()
                 } else {
                     val error = result.data?.getStringExtra("error") ?: "Payment cancelled."
@@ -63,25 +64,21 @@ class EliteDashboardActivity : ComponentActivity() {
             }
 
             if (!isEliteUnlocked) {
-                showSecretDialog = true
-                if (showSecretDialog) {
-                    PremiumUnlockDialog(
-                        onDismiss = { finish() },
-                        onUnlockSuccess = {
-                            prefs.edit().putBoolean("elite_unlocked", true).apply()
-                            isEliteUnlocked = true
-                            showSecretDialog = false
-                        },
-                        onPayClick = {
-                            val intent = Intent(this@EliteDashboardActivity, com.rivavafi.universal.ui.portfolio.PaymentActivity::class.java).apply {
-                                putExtra("plan", "elite_399")
-                                putExtra("amountPaise", 39900)
-                                putExtra("title", "Rivava Elite Membership")
-                            }
-                            paymentLauncher.launch(intent)
+                PremiumUnlockDialog(
+                    onDismiss = { finish() },
+                    onUnlockSuccess = {
+                        prefs.edit().putBoolean("elite_unlocked", true).apply()
+                        localUnlocked = true
+                    },
+                    onPayClick = {
+                        val intent = Intent(this@EliteDashboardActivity, com.rivavafi.universal.ui.portfolio.PaymentActivity::class.java).apply {
+                            putExtra("plan", "elite_399")
+                            putExtra("amountPaise", 39900)
+                            putExtra("title", "Rivava Elite Membership")
                         }
-                    )
-                }
+                        paymentLauncher.launch(intent)
+                    }
+                )
 
                 if (showWhatsAppDialog) {
                     androidx.compose.material3.AlertDialog(
