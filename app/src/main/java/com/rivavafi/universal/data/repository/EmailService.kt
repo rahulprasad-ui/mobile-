@@ -79,7 +79,7 @@ class EmailService @Inject constructor() {
                 """.trimIndent()
 
                 val json = JSONObject().apply {
-                    put("from", "Rivava TrackFi <onboarding@resend.dev>")
+                    put("from", "Rivava TrackFi <support@rivava.in>")
                     put("to", JSONArray().put(userEmail))
                     put("subject", "Rivava Security Alert: New Login Detected")
                     put("html", htmlContent)
@@ -130,7 +130,7 @@ class EmailService @Inject constructor() {
                 """.trimIndent()
 
                 val json = JSONObject().apply {
-                    put("from", "Rivava TrackFi <onboarding@resend.dev>")
+                    put("from", "Rivava TrackFi <support@rivava.in>")
                     put("to", JSONArray().put(userEmail))
                     put("subject", "Welcome to Rivava TrackFi 🎉")
                     put("html", htmlContent)
@@ -226,7 +226,7 @@ class EmailService @Inject constructor() {
                 """.trimIndent()
 
                 val json = JSONObject().apply {
-                    put("from", "Rivava TrackFi <onboarding@resend.dev>")
+                    put("from", "Rivava TrackFi <support@rivava.in>")
                     put("to", JSONArray().put(userEmail))
                     put("subject", "Password Reset Request - Rivava TrackFi 🔐")
                     put("html", htmlContent)

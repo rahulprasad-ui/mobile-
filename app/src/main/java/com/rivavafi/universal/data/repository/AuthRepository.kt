@@ -248,27 +248,26 @@ class AuthRepository @Inject constructor(
 
     suspend fun sendPasswordReset(email: String): Boolean {
         val cleanEmail = email.trim()
-        // 1. Primary: Firebase Auth direct password reset email (Google mail servers)
+        // 1. Primary: Branded Rivava Template via verified domain support@rivava.in (Resend)
         try {
-            auth.sendPasswordResetEmail(cleanEmail).await()
-            Log.d("AuthRepository", "Password reset email dispatched successfully via Firebase Auth to $cleanEmail")
-            return true
-        } catch (firebaseEx: Exception) {
-            Log.w("AuthRepository", "Firebase Auth sendPasswordResetEmail notice: ${firebaseEx.message}, trying backend API...")
-        }
-
-        // 2. Secondary Fallback: Backend API via Resend
-        return try {
             val response = authApiService.forgotPassword(com.rivavafi.universal.domain.api.ForgotPasswordRequest(cleanEmail))
             if (response.isSuccessful) {
-                Log.d("AuthRepository", "Password reset email dispatched successfully via backend Resend")
-                true
+                Log.d("AuthRepository", "Password reset email dispatched successfully via verified domain support@rivava.in")
+                return true
             } else {
-                Log.e("AuthRepository", "Backend password reset failed with code: ${response.code()}")
-                false
+                Log.w("AuthRepository", "Backend forgotPassword returned code ${response.code()}, trying Firebase Auth fallback...")
             }
-        } catch (e: Exception) {
-            Log.e("AuthRepository", "Failed to send password reset via backend API", e)
+        } catch (backendErr: Exception) {
+            Log.w("AuthRepository", "Backend forgotPassword notice: ${backendErr.message}, trying Firebase Auth fallback...")
+        }
+
+        // 2. Secondary Fallback: Firebase Auth direct password reset email
+        return try {
+            auth.sendPasswordResetEmail(cleanEmail).await()
+            Log.d("AuthRepository", "Password reset email dispatched successfully via Firebase Auth fallback to $cleanEmail")
+            true
+        } catch (firebaseEx: Exception) {
+            Log.e("AuthRepository", "Firebase Auth sendPasswordResetEmail fallback failed: ${firebaseEx.message}", firebaseEx)
             false
         }
     }
