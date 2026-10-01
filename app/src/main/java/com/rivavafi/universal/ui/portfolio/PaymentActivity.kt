@@ -59,12 +59,6 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
         // silently fails to open.
         super.onCreate(savedInstanceState)
 
-        // Warms up checkout resources so the form opens quickly.
-        try {
-            Checkout.preload(applicationContext)
-        } catch (e: Exception) {
-            // Preload is an optimization only; ignore failures.
-        }
 
         plan = intent.getStringExtra("plan") ?: "portfolio_premium"
         amountPaise = intent.getIntExtra("amountPaise", 39900)
@@ -129,7 +123,15 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                 if (response.isSuccessful && response.body()?.success == true) {
                     val data = response.body()?.data
                     val orderId = data?.orderId
-                    val keyId = data?.keyId?.takeIf { it.isNotBlank() && it.startsWith("rzp_") && !it.contains("mock") && !it.contains("1DP5mmOlF5G5ag") } ?: "rzp_test_Tiaq1UtYWGxArt"
+                    val rawKey = data?.keyId
+
+                    // Fail loudly if server returns a missing/invalid/mock key.
+                    // Silent fallback causes key-order mismatch and broken checkout.
+                    if (rawKey.isNullOrBlank() || !rawKey.startsWith("rzp_") || rawKey.contains("mock")) {
+                        failPayment("Payment configuration error: invalid key from server. Please contact support.")
+                        return@launch
+                    }
+                    val keyId = rawKey
                     currentOrderId = orderId
 
                     if (orderId != null) {
@@ -150,12 +152,11 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
 
     private fun launchRazorpayCheckout(orderId: String, keyId: String, email: String, phone: String, amountPaise: Int) {
         val checkout = Checkout()
-        val effectiveKey = if (keyId.isBlank() || keyId.contains("mock") || keyId.contains("1DP5mmOlF5G5ag")) "rzp_test_Tiaq1UtYWGxArt" else keyId
-        checkout.setKeyID(effectiveKey)
+        checkout.setKeyID(keyId)
 
         try {
-            // Official Razorpay Order IDs are strictly 'order_' followed by exactly 14 alphanumeric characters (e.g. order_TibOg883ra6mLw)
-            val isOfficialRazorpayOrder = orderId.matches(Regex("^order_[a-zA-Z0-9]{14}$"))
+            // Accept any Razorpay Orders API order ID: 'order_' + 14-20 alphanumeric chars
+            val isOfficialRazorpayOrder = orderId.matches(Regex("^order_[a-zA-Z0-9]{14,20}$"))
 
             val options = JSONObject().apply {
                 put("name", "Rivava TrackFi")
@@ -166,8 +167,9 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
 
                 val prefill = JSONObject().apply {
                     put("email", email)
-                    put("contact", if (phone.length >= 10) phone else "9999999999")
-                    put("method", "upi")
+                    // Only prefill contact if user has a real phone number.
+                    // Fake numbers (9999999999) can trigger Razorpay risk-check failures.
+                    if (phone.length >= 10) put("contact", phone)
                 }
                 put("prefill", prefill)
 
@@ -176,19 +178,7 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                     put("order_id", orderId)
                 }
 
-                // Enable UPI (Google Pay, PhonePe, Paytm, BHIM) and other payment methods
-                val methodObj = JSONObject().apply {
-                    put("upi", true)
-                    put("card", true)
-                    put("netbanking", true)
-                    put("wallet", true)
-                }
-                put("method", methodObj)
 
-                val upiObj = JSONObject().apply {
-                    put("flow", "intent")
-                }
-                put("upi", upiObj)
 
                 val theme = JSONObject().apply {
                     put("color", "#00B4D8")

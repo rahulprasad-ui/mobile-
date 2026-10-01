@@ -202,7 +202,9 @@ dependencies {
     implementation("org.jsoup:jsoup:1.17.2")
 
     // Razorpay Payment Gateway SDK
-    implementation("com.razorpay:checkout:1.6.41")
+    // NOTE: 1.6.33 is the last version WITHOUT the intrusive "SDK Compatibility Status" popup.
+    // Versions 1.6.38+ show it automatically and it cannot be suppressed programmatically.
+    implementation("com.razorpay:checkout:1.6.33")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.5.0")
