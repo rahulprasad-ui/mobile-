@@ -651,7 +651,8 @@ fun AuthScreenContent(
 
                                         TextButton(onClick = {
                                             val norm = viewModel.normalizePhoneNumber(phoneInput) ?: phoneInput
-                                            viewModel.resendOtp(norm) {
+                                            val activity = context as? android.app.Activity
+                                            viewModel.resendOtp(activity, norm) {
                                                 Toast.makeText(context, "OTP Resent successfully", Toast.LENGTH_SHORT).show()
                                             }
                                         }) {
@@ -663,8 +664,9 @@ fun AuthScreenContent(
                                 Button(
                                     onClick = {
                                         val norm = viewModel.normalizePhoneNumber(phoneInput) ?: phoneInput
+                                        val activity = context as? android.app.Activity
                                         if (!isOtpSent) {
-                                            viewModel.startPhoneVerification(norm) {
+                                            viewModel.startPhoneVerification(activity, norm) {
                                                 isOtpSent = true
                                                 Toast.makeText(context, "OTP sent to $phoneInput", Toast.LENGTH_SHORT).show()
                                             }

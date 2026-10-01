@@ -47,6 +47,17 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    suspend fun signInWithPhoneCredential(credential: com.google.firebase.auth.PhoneAuthCredential): Result<String> {
+        return try {
+            val authResult = auth.signInWithCredential(credential).await()
+            val uid = authResult.user?.uid ?: throw Exception("Failed to retrieve Firebase UID")
+            Result.success(uid)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Firebase Phone Credential sign-in failed", e)
+            Result.failure(e)
+        }
+    }
+
     suspend fun verifyOtpAndSignIn(phone: String, otp: String): Result<String> {
         return try {
             val response = com.rivavafi.universal.data.network.RetrofitClient.apiService.verifyOtp(
