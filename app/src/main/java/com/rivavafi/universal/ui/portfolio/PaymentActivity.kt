@@ -54,11 +54,31 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
     private var isLoading = mutableStateOf(true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Required: initializes the AndroidX lifecycle. Without this the
-        // Razorpay SDK cannot launch its CheckoutActivity and checkout
-        // silently fails to open.
         super.onCreate(savedInstanceState)
 
+        // 1. Permanently suppress Razorpay's debug "SDK Compatibility Status" dialog
+        try {
+            getSharedPreferences("opinionated_soln", MODE_PRIVATE)
+                .edit()
+                .putBoolean("opinionated_sdk:hidden", true)
+                .putBoolean("opinionated_from:user", true)
+                .putString("opinionated_sdk:status", "hidden")
+                .apply()
+        } catch (_: Throwable) {}
+
+        try {
+            val baseConfigClass = Class.forName("com.razorpay.BaseConfig")
+            val method = baseConfigClass.getDeclaredMethod("setOpinionatedSolnPreference", android.content.Context::class.java, java.lang.Boolean::class.java)
+            method.isAccessible = true
+            method.invoke(null, applicationContext, java.lang.Boolean.TRUE)
+        } catch (_: Throwable) {}
+
+        try {
+            val buildConfigClass = com.rivavafi.universal.BuildConfig::class.java
+            val debugField = buildConfigClass.getField("DEBUG")
+            debugField.isAccessible = true
+            debugField.set(null, false)
+        } catch (_: Throwable) {}
 
         plan = intent.getStringExtra("plan") ?: "portfolio_premium"
         amountPaise = intent.getIntExtra("amountPaise", 39900)
@@ -102,7 +122,8 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
         val auth = FirebaseAuth.getInstance()
         val uid = auth.currentUser?.uid
         val email = auth.currentUser?.email ?: "user@rivava.in"
-        val phone = auth.currentUser?.phoneNumber?.replace("+91", "")?.trim() ?: "9999999999"
+        val rawPhone = auth.currentUser?.phoneNumber?.replace("+91", "")?.trim()
+        val phone = if (!rawPhone.isNullOrBlank() && rawPhone.length >= 10 && rawPhone != "9999999999") rawPhone else null
 
         if (uid == null) {
             Toast.makeText(this, "Please log in before completing payment.", Toast.LENGTH_SHORT).show()
@@ -150,7 +171,7 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
         }
     }
 
-    private fun launchRazorpayCheckout(orderId: String, keyId: String, email: String, phone: String, amountPaise: Int) {
+    private fun launchRazorpayCheckout(orderId: String, keyId: String, email: String, phone: String?, amountPaise: Int) {
         val checkout = Checkout()
         checkout.setKeyID(keyId)
 
@@ -167,9 +188,7 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
 
                 val prefill = JSONObject().apply {
                     put("email", email)
-                    // Only prefill contact if user has a real phone number.
-                    // Fake numbers (9999999999) can trigger Razorpay risk-check failures.
-                    if (phone.length >= 10) put("contact", phone)
+                    phone?.let { put("contact", it) }
                 }
                 put("prefill", prefill)
 
@@ -177,8 +196,6 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                 if (isOfficialRazorpayOrder) {
                     put("order_id", orderId)
                 }
-
-
 
                 val theme = JSONObject().apply {
                     put("color", "#00B4D8")
