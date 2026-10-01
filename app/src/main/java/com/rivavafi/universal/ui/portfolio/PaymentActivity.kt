@@ -167,6 +167,7 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                 val prefill = JSONObject().apply {
                     put("email", email)
                     put("contact", if (phone.length >= 10) phone else "9999999999")
+                    put("method", "upi")
                 }
                 put("prefill", prefill)
 
@@ -174,6 +175,20 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                 if (isOfficialRazorpayOrder) {
                     put("order_id", orderId)
                 }
+
+                // Enable UPI (Google Pay, PhonePe, Paytm, BHIM) and other payment methods
+                val methodObj = JSONObject().apply {
+                    put("upi", true)
+                    put("card", true)
+                    put("netbanking", true)
+                    put("wallet", true)
+                }
+                put("method", methodObj)
+
+                val upiObj = JSONObject().apply {
+                    put("flow", "intent")
+                }
+                put("upi", upiObj)
 
                 val theme = JSONObject().apply {
                     put("color", "#00B4D8")
