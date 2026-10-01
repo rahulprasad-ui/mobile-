@@ -54,6 +54,7 @@ fun PremiumUnlockDialog(
     var passwordVisible by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     val keyState by viewModel.keyVerificationState.collectAsState()
 
     LaunchedEffect(keyState) {
@@ -238,7 +239,16 @@ fun PremiumUnlockDialog(
 
                             Button(
                                 onClick = {
-                                    viewModel.startPremiumPurchase(amountPaise = 39900)
+                                    if (onPayClick != null) {
+                                        onPayClick()
+                                    } else {
+                                        val intent = android.content.Intent(context, PaymentActivity::class.java).apply {
+                                            putExtra("plan", "portfolio_premium")
+                                            putExtra("amountPaise", 39900)
+                                            putExtra("title", "Rivava Portfolio Premium")
+                                        }
+                                        context.startActivity(intent)
+                                    }
                                 },
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37), contentColor = Color.Black),

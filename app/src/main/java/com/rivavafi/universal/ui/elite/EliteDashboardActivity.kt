@@ -48,10 +48,24 @@ class EliteDashboardActivity : ComponentActivity() {
             var isEliteUnlocked by remember { mutableStateOf(prefs.getBoolean("elite_unlocked", false)) }
             var showWhatsAppDialog by remember { mutableStateOf(false) }
 
+            val paymentLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult()
+            ) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    prefs.edit().putBoolean("elite_unlocked", true).apply()
+                    isEliteUnlocked = true
+                    showSecretDialog = false
+                    Toast.makeText(this@EliteDashboardActivity, "🎉 Elite Membership Activated!", Toast.LENGTH_LONG).show()
+                } else {
+                    val error = result.data?.getStringExtra("error") ?: "Payment cancelled."
+                    Toast.makeText(this@EliteDashboardActivity, error, Toast.LENGTH_SHORT).show()
+                }
+            }
+
             if (!isEliteUnlocked) {
                 showSecretDialog = true
                 if (showSecretDialog) {
-                        PremiumUnlockDialog(
+                    PremiumUnlockDialog(
                         onDismiss = { finish() },
                         onUnlockSuccess = {
                             prefs.edit().putBoolean("elite_unlocked", true).apply()
@@ -59,15 +73,12 @@ class EliteDashboardActivity : ComponentActivity() {
                             showSecretDialog = false
                         },
                         onPayClick = {
-                            WhatsAppUtils.openWhatsAppForAdvisor(
-                                context = this@EliteDashboardActivity,
-                                username = auth.currentUser?.displayName ?: "User",
-                                email = auth.currentUser?.email ?: "",
-                                phoneNumber = userPhone,
-                                preference = "Rivava Elite",
-                                premiumStatus = false
-                            )
-                            showWhatsAppDialog = true
+                            val intent = Intent(this@EliteDashboardActivity, com.rivavafi.universal.ui.portfolio.PaymentActivity::class.java).apply {
+                                putExtra("plan", "elite_399")
+                                putExtra("amountPaise", 39900)
+                                putExtra("title", "Rivava Elite Membership")
+                            }
+                            paymentLauncher.launch(intent)
                         }
                     )
                 }

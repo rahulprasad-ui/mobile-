@@ -102,6 +102,18 @@ fun RivavaPortfolioScreen(
     var showWhatsAppDialog by remember { mutableStateOf(false) }
     var premiumKeyInput by remember { mutableStateOf("") }
 
+    val portfolioPaymentLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            premiumViewModel.syncEntitlement()
+            android.widget.Toast.makeText(context, "🎉 Portfolio Premium Unlocked!", android.widget.Toast.LENGTH_LONG).show()
+        } else {
+            val error = result.data?.getStringExtra("error") ?: "Payment was cancelled."
+            android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
     if (premiumState.status == EntitlementStatus.LOADING) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -134,13 +146,13 @@ fun RivavaPortfolioScreen(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF111111))
             ) {
                 Column(
-                    modifier = Modifier.padding(32.dp),
+                    modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(72.dp)
                             .background(Color(0xFFFF4C91).copy(alpha = 0.18f), shape = CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -148,10 +160,10 @@ fun RivavaPortfolioScreen(
                             imageVector = Icons.Default.Lock,
                             contentDescription = "Locked",
                             tint = Color.White,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(36.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                     Text(
                         "Rivava Portfolio Locked",
                         style = MaterialTheme.typography.headlineSmall.copy(
@@ -160,17 +172,47 @@ fun RivavaPortfolioScreen(
                         ),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Unlock premium insights and advanced portfolio tracking.",
-                        style = MaterialTheme.typography.bodyLarge.copy(
+                        "Unlock real-time analytics, AI insights and full portfolio tracking.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
                             color = Color.White.copy(alpha = 0.7f)
                         ),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
+                        onClick = {
+                            val intent = Intent(context, PaymentActivity::class.java).apply {
+                                putExtra("plan", "portfolio_premium")
+                                putExtra("amountPaise", 39900)
+                                putExtra("title", "Rivava Portfolio Premium")
+                            }
+                            portfolioPaymentLauncher.launch(intent)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFD4AF37),
+                            contentColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(18.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 1.dp)
+                    ) {
+                        Text(
+                            "Pay ₹399 & Unlock Portfolio",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.Black
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
                         onClick = {
                             com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
                                 context = context,
@@ -183,34 +225,29 @@ fun RivavaPortfolioScreen(
                             showWhatsAppDialog = true
                         },
                         modifier = Modifier
-                            .widthIn(min = 220.dp)
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFD4AF37),
-                            contentColor = Color.Black
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 1.dp)
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.25f))
                     ) {
                         Text(
                             "Chat With Advisor",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White
                             )
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     var showSecretDialog by remember { mutableStateOf(false) }
 
-                    OutlinedButton(
+                    TextButton(
                         onClick = { showSecretDialog = true },
-                        modifier = Modifier.widthIn(min = 220.dp).height(50.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha=0.5f))
+                        modifier = Modifier.fillMaxWidth().height(42.dp)
                     ) {
-                        Text("Enter Secret Key", color = Color.White)
+                        Text("Have a key? Enter Secret Key", color = Color(0xFF38BDF8), fontSize = 13.sp)
                     }
 
                     if (showSecretDialog) {
@@ -221,15 +258,13 @@ fun RivavaPortfolioScreen(
                                 showSecretDialog = false
                             },
                             onPayClick = {
-                                com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
-                                    context = context,
-                                    username = auth.currentUser?.displayName ?: "User",
-                                    email = auth.currentUser?.email ?: "",
-                                    phoneNumber = userPhone,
-                                    preference = "No",
-                                    premiumStatus = false
-                                )
-                                showWhatsAppDialog = true
+                                showSecretDialog = false
+                                val intent = Intent(context, PaymentActivity::class.java).apply {
+                                    putExtra("plan", "portfolio_premium")
+                                    putExtra("amountPaise", 39900)
+                                    putExtra("title", "Rivava Portfolio Premium")
+                                }
+                                portfolioPaymentLauncher.launch(intent)
                             }
                         )
                     }

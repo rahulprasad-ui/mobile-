@@ -201,6 +201,9 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("org.jsoup:jsoup:1.17.2")
 
+    // Razorpay Payment Gateway SDK
+    implementation("com.razorpay:checkout:1.6.38")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.5.0")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

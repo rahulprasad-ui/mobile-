@@ -210,6 +210,18 @@ fun EliteLandingScreen(
     val coroutineScope = rememberCoroutineScope()
     val eliteRepository = remember { com.rivavafi.universal.data.repository.EliteRepository() }
 
+    val paymentLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        isProcessingPayment = false
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            showPaymentSuccessDialog = true
+        } else {
+            val error = result.data?.getStringExtra("error") ?: "Payment was cancelled."
+            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     if (showPaymentSuccessDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -265,26 +277,12 @@ fun EliteLandingScreen(
                     Button(
                         onClick = {
                             isProcessingPayment = true
-                            coroutineScope.launch {
-                                try {
-                                    val res = eliteRepository.createEliteOrder()
-                                    if (res.success && res.orderId != null) {
-                                        val verify = eliteRepository.verifyElitePayment(res.orderId)
-                                        isProcessingPayment = false
-                                        if (verify) {
-                                            showPaymentSuccessDialog = true
-                                        } else {
-                                            Toast.makeText(context, "Payment verification pending. Please check connection.", Toast.LENGTH_LONG).show()
-                                        }
-                                    } else {
-                                        isProcessingPayment = false
-                                        Toast.makeText(context, res.error ?: "Failed to initiate payment", Toast.LENGTH_SHORT).show()
-                                    }
-                                } catch (e: Exception) {
-                                    isProcessingPayment = false
-                                    Toast.makeText(context, "Payment error: ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
+                            val intent = Intent(context, com.rivavafi.universal.ui.portfolio.PaymentActivity::class.java).apply {
+                                putExtra("plan", "elite_399")
+                                putExtra("amountPaise", 39900)
+                                putExtra("title", "Rivava Elite Membership")
                             }
+                            paymentLauncher.launch(intent)
                         },
                         enabled = !isProcessingPayment && !isFull,
                         modifier = Modifier
@@ -299,7 +297,7 @@ fun EliteLandingScreen(
                         if (isProcessingPayment) {
                             CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                             Spacer(Modifier.width(10.dp))
-                            Text("Processing ₹399 Payment...", color = Color.Black, fontWeight = FontWeight.Bold)
+                            Text("Opening Payment Gateway...", color = Color.Black, fontWeight = FontWeight.Bold)
                         } else if (isFull) {
                             Text("Membership Full", color = Color.LightGray, fontWeight = FontWeight.Bold)
                         } else {
