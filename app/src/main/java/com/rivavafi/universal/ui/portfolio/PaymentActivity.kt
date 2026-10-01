@@ -242,9 +242,6 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                 if (response.isSuccessful && response.body()?.success == true) {
                     // Update entitlement locally and in Firestore
                     entitlementRepository.syncEntitlement()
-                    if (plan.contains("elite")) {
-                        eliteRepository.verifyElitePayment(orderId, paymentId, signature)
-                    }
 
                     Toast.makeText(this@PaymentActivity, "🎉 Payment Successful! Access Unlocked.", Toast.LENGTH_LONG).show()
                     setResult(Activity.RESULT_OK, Intent().apply {
@@ -253,7 +250,8 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                     })
                     finish()
                 } else {
-                    failPayment("Payment verification failed on server. Please contact support.")
+                    val serverMsg = response.body()?.message ?: "Payment verification failed on server. Please contact support."
+                    failPayment(serverMsg)
                 }
             } catch (e: Exception) {
                 failPayment("Error verifying payment: ${e.message}")

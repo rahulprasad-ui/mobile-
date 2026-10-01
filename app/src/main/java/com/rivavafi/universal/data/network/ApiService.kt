@@ -80,6 +80,27 @@ data class SyncUserResponse(
     @SerializedName("message") val message: String? = null
 )
 
+data class BookSessionRequest(
+    @SerializedName("uid") val uid: String,
+    @SerializedName("duration") val duration: Int,
+    @SerializedName("date") val date: Long,
+    @SerializedName("time") val time: String
+)
+
+data class BookSessionResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String? = null
+)
+
+data class CancelSubscriptionRequest(
+    @SerializedName("uid") val uid: String
+)
+
+data class CancelSubscriptionResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String? = null
+)
+
 interface ApiService {
     @POST("auth/send-otp")
     suspend fun sendOtp(@Body request: OtpRequest): Response<OtpResponse>
@@ -98,4 +119,10 @@ interface ApiService {
 
     @POST("users/sync")
     suspend fun syncUser(@Body request: SyncUserRequest): Response<SyncUserResponse>
+
+    @POST("api/v1/elite/book-session")
+    suspend fun bookEliteSession(@Body request: BookSessionRequest): Response<BookSessionResponse>
+
+    @POST("api/v1/elite/cancel-subscription")
+    suspend fun cancelEliteSubscription(@Body request: CancelSubscriptionRequest): Response<CancelSubscriptionResponse>
 }

@@ -74,29 +74,85 @@ class EliteRepository @Inject constructor() {
             return@callbackFlow
         }
 
+        var isEliteFromSub = false
+        var currentSub = EliteSubscription()
+
+        val checkTherivdata = {
+            firestore.collection("therivdata").document(uid)
+                .get()
+                .addOnSuccessListener { rSnap ->
+                    if (rSnap != null && rSnap.exists()) {
+                        val rivElite = rSnap.getBoolean("isElite") ?: false
+                        if (rivElite && !isEliteFromSub) {
+                            val plan = rSnap.getString("elite_plan") ?: "elite_399"
+                            val remMins = rSnap.getLong("minutesRemaining")?.toInt() ?: 600
+                            val monMins = rSnap.getLong("monthlyMinutes")?.toInt() ?: 600
+                            trySend(EliteSubscription(
+                                isElite = true,
+                                plan = plan,
+                                minutesRemaining = remMins,
+                                monthlyMinutes = monMins,
+                                autoRenew = false,
+                                nextBillingDate = System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000,
+                                paymentStatus = "active"
+                            ))
+                        }
+                    }
+                }
+        }
+
         val listener = firestore.collection("users").document(uid).collection("subscription").document("current")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e(TAG, "Error fetching user subscription", error)
+                    checkTherivdata()
                     return@addSnapshotListener
                 }
 
-                if (snapshot != null && snapshot.exists()) {
-                    val isElite = snapshot.getBoolean("isElite") ?: false
-                    val plan = snapshot.getString("plan") ?: ""
-                    val minutesRemaining = snapshot.getLong("minutesRemaining")?.toInt() ?: 0
-                    val monthlyMinutes = snapshot.getLong("monthlyMinutes")?.toInt() ?: 0
+                if (snapshot != null && snapshot.exists() && snapshot.getBoolean("isElite") == true) {
+                    isEliteFromSub = true
+                    val isElite = true
+                    val plan = snapshot.getString("plan") ?: "elite_399"
+                    val minutesRemaining = snapshot.getLong("minutesRemaining")?.toInt() ?: 600
+                    val monthlyMinutes = snapshot.getLong("monthlyMinutes")?.toInt() ?: 600
                     val autoRenew = snapshot.getBoolean("autoRenew") ?: false
-                    val nextBillingDate = snapshot.getTimestamp("nextBillingDate")?.seconds?.times(1000) ?: 0L
-                    val paymentStatus = snapshot.getString("paymentStatus") ?: ""
+                    val nextBillingDate = snapshot.getTimestamp("nextBillingDate")?.seconds?.times(1000) ?: (System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000)
+                    val paymentStatus = snapshot.getString("paymentStatus") ?: "success"
 
-                    trySend(EliteSubscription(isElite, plan, minutesRemaining, monthlyMinutes, autoRenew, nextBillingDate, paymentStatus))
+                    currentSub = EliteSubscription(isElite, plan, minutesRemaining, monthlyMinutes, autoRenew, nextBillingDate, paymentStatus)
+                    trySend(currentSub)
                 } else {
-                    trySend(EliteSubscription())
+                    isEliteFromSub = false
+                    checkTherivdata()
                 }
             }
 
-        awaitClose { listener.remove() }
+        // Secondary listener on therivdata for real-time unlock detection
+        val therivListener = firestore.collection("therivdata").document(uid)
+            .addSnapshotListener { rSnap, _ ->
+                if (rSnap != null && rSnap.exists()) {
+                    val rivElite = rSnap.getBoolean("isElite") ?: false
+                    if (rivElite && !isEliteFromSub) {
+                        val plan = rSnap.getString("elite_plan") ?: "elite_399"
+                        val remMins = rSnap.getLong("minutesRemaining")?.toInt() ?: 600
+                        val monMins = rSnap.getLong("monthlyMinutes")?.toInt() ?: 600
+                        trySend(EliteSubscription(
+                            isElite = true,
+                            plan = plan,
+                            minutesRemaining = remMins,
+                            monthlyMinutes = monMins,
+                            autoRenew = false,
+                            nextBillingDate = System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000,
+                            paymentStatus = "active"
+                        ))
+                    }
+                }
+            }
+
+        awaitClose {
+            listener.remove()
+            therivListener.remove()
+        }
     }
 
     fun getUserSessions(): Flow<List<EliteSession>> = callbackFlow {
@@ -108,7 +164,7 @@ class EliteRepository @Inject constructor() {
         }
 
         val listener = firestore.collection("elite_sessions")
-            .whereEqualTo("uid", uid)
+            .whereEqualTo("userId", uid)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e(TAG, "Error fetching user sessions", error)
@@ -178,24 +234,11 @@ class EliteRepository @Inject constructor() {
             val isSuccess = response.isSuccessful && response.body()?.success == true
 
             if (isSuccess) {
-                val subData = hashMapOf(
-                    "isElite" to true,
-                    "plan" to "elite_399",
-                    "minutesRemaining" to 600,
-                    "monthlyMinutes" to 600,
-                    "autoRenew" to false,
-                    "nextBillingDate" to com.google.firebase.Timestamp(java.util.Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)),
-                    "paymentStatus" to "success",
-                    "orderId" to orderId
-                )
-                firestore.collection("users").document(uid).collection("subscription").document("current")
-                    .set(subData, com.google.firebase.firestore.SetOptions.merge())
-
-                firestore.collection("therivdata").document(uid)
-                    .set(mapOf("premiumStatus" to true, "isElite" to true), com.google.firebase.firestore.SetOptions.merge())
-
-                firestore.collection("therivavadata").document(uid)
-                    .set(mapOf("premiumStatus" to true, "isElite" to true), com.google.firebase.firestore.SetOptions.merge())
+                // Update local therivdata mirror if allowed
+                try {
+                    firestore.collection("therivdata").document(uid)
+                        .set(mapOf("premiumStatus" to true, "isElite" to true), com.google.firebase.firestore.SetOptions.merge())
+                } catch (_: Exception) {}
                 true
             } else {
                 false
@@ -207,40 +250,32 @@ class EliteRepository @Inject constructor() {
     }
 
     suspend fun bookSession(duration: Int, dateMillis: Long, time: String): Boolean {
-        if (auth.currentUser?.uid == null) return false
+        val uid = auth.currentUser?.uid ?: return false
 
         return try {
-            val data = hashMapOf(
-                "duration" to duration,
-                "date" to dateMillis,
-                "time" to time
+            val req = com.rivavafi.universal.data.network.BookSessionRequest(
+                uid = uid,
+                duration = duration,
+                date = dateMillis,
+                time = time
             )
-            val result = functions
-                .getHttpsCallable("bookEliteSession")
-                .call(data)
-                .await()
-
-            val resultData = result.data as? Map<*, *>
-            resultData?.get("success") == true
+            val response = com.rivavafi.universal.data.network.RetrofitClient.apiService.bookEliteSession(req)
+            response.isSuccessful && response.body()?.success == true
         } catch (e: Exception) {
-            Log.e(TAG, "Error booking session", e)
+            Log.e(TAG, "Error booking session via API", e)
             false
         }
     }
 
     suspend fun cancelSubscription(): Boolean {
-         if (auth.currentUser?.uid == null) return false
+        val uid = auth.currentUser?.uid ?: return false
 
         return try {
-            val result = functions
-                .getHttpsCallable("cancelEliteSubscription")
-                .call()
-                .await()
-
-            val resultData = result.data as? Map<*, *>
-            resultData?.get("success") == true
+            val req = com.rivavafi.universal.data.network.CancelSubscriptionRequest(uid = uid)
+            val response = com.rivavafi.universal.data.network.RetrofitClient.apiService.cancelEliteSubscription(req)
+            response.isSuccessful && response.body()?.success == true
         } catch (e: Exception) {
-            Log.e(TAG, "Error cancelling subscription", e)
+            Log.e(TAG, "Error cancelling subscription via API", e)
             false
         }
     }
