@@ -289,25 +289,31 @@ class AuthViewModel @Inject constructor(
     }
 
     fun onForgotPassword(email: String, onSuccess: () -> Unit) {
-        if (email.isBlank()) {
+        val cleanEmail = email.trim()
+        if (cleanEmail.isBlank()) {
             _errorMessage.value = "Please enter your email to reset your password."
             return
         }
         viewModelScope.launch {
             _authState.value = AuthState.LOADING
             try {
-                val sent = repository.sendPasswordReset(email)
+                val sent = repository.sendPasswordReset(cleanEmail)
                 if (sent) {
-                    _errorMessage.value = "Reset link sent to your email"
+                    _errorMessage.value = null
                     _authState.value = AuthState.IDLE
                     onSuccess()
                 } else {
-                    _errorMessage.value = "Failed to send reset email. Please try again."
+                    _errorMessage.value = "Failed to send reset email. Please ensure the email is registered."
                     _authState.value = AuthState.IDLE
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Password reset failed", e)
-                _errorMessage.value = e.message ?: "Failed to send reset email."
+                val msg = when {
+                    e.message?.contains("user-not-found", ignoreCase = true) == true -> "No account found with this email address."
+                    e.message?.contains("invalid-email", ignoreCase = true) == true -> "Please enter a valid email address."
+                    else -> e.localizedMessage ?: "Failed to send reset email. Please try again."
+                }
+                _errorMessage.value = msg
                 _authState.value = AuthState.IDLE
             }
         }

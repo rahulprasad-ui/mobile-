@@ -247,8 +247,19 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun sendPasswordReset(email: String): Boolean {
+        val cleanEmail = email.trim()
+        // 1. Primary: Firebase Auth direct password reset email (Google mail servers)
+        try {
+            auth.sendPasswordResetEmail(cleanEmail).await()
+            Log.d("AuthRepository", "Password reset email dispatched successfully via Firebase Auth to $cleanEmail")
+            return true
+        } catch (firebaseEx: Exception) {
+            Log.w("AuthRepository", "Firebase Auth sendPasswordResetEmail notice: ${firebaseEx.message}, trying backend API...")
+        }
+
+        // 2. Secondary Fallback: Backend API via Resend
         return try {
-            val response = authApiService.forgotPassword(com.rivavafi.universal.domain.api.ForgotPasswordRequest(email))
+            val response = authApiService.forgotPassword(com.rivavafi.universal.domain.api.ForgotPasswordRequest(cleanEmail))
             if (response.isSuccessful) {
                 Log.d("AuthRepository", "Password reset email dispatched successfully via backend Resend")
                 true
